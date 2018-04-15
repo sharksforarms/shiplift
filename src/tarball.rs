@@ -1,7 +1,7 @@
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs::{self, File};
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::{Path, MAIN_SEPARATOR};
 use tar::Archive;
 

@@ -69,9 +69,8 @@ use rep::{Change, Container as ContainerRep, ContainerCreateInfo,
           Version};
 
 use std::borrow::Cow;
-use std::env::{self, VarError};
+use std::env;
 use std::io::Read;
-use std::iter::IntoIterator;
 use std::path::Path;
 use std::time::Duration;
 use transport::{tar, Transport};
@@ -474,8 +473,8 @@ impl<'a, 'b> Container<'a, 'b> {
                 let mut bytes = data.as_bytes();
                 let json = ::serde_json::from_str::<Value>(res.as_str())?;
 
-                if let Value::Object(ref obj) = json {
-                    let id = json.get("Id")
+                if let Value::Object(ref _obj) = json {
+                    let _id = json.get("Id")
                         .ok_or_else(|| EK::JsonFieldMissing("Id"))
                         .map_err(Error::from_kind)?
                         .as_str()
@@ -693,28 +692,24 @@ impl Docker {
                     let mut connector =
                         SslConnectorBuilder::new(SslMethod::tls())?;
 
-                    connector
-                        .builder_mut()
-                        .set_cipher_list("DEFAULT")?;
+                    connector.set_cipher_list("DEFAULT")?;
 
                     let cert = &format!("{}/cert.pem", certs);
                     let key = &format!("{}/key.pem", certs);
 
-                    connector.builder_mut().set_certificate_file(
+                    connector.set_certificate_file(
                         &Path::new(cert),
                         X509_FILETYPE_PEM,
                     )?;
 
-                    connector.builder_mut().set_private_key_file(
+                    connector.set_private_key_file(
                         &Path::new(key),
                         X509_FILETYPE_PEM,
                     )?;
 
                     if let Some(_) = env::var("DOCKER_TLS_VERIFY").ok() {
                         let ca = &format!("{}/ca.pem", certs);
-                        connector
-                            .builder_mut()
-                            .set_ca_file(&Path::new(ca))?;
+                        connector.set_ca_file(&Path::new(ca))?;
                     }
 
                     let ssl = OpensslClient::from(connector.build());

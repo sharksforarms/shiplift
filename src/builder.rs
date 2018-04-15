@@ -7,7 +7,6 @@ use serde_json::Value;
 use std::cmp::Eq;
 use std::collections::{BTreeMap, HashMap};
 use std::hash::Hash;
-use std::iter::IntoIterator;
 use std::iter::Peekable;
 use url::form_urlencoded;
 
@@ -1078,6 +1077,7 @@ impl NetworkCreateOptionsBuilder {
 }
 
 /// Interface for connect container to network
+#[allow(non_snake_case)]
 #[derive(Serialize)]
 pub struct ContainerConnectionOptions {
     pub Container: Option<String>,

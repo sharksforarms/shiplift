@@ -96,7 +96,7 @@ impl Transport {
             _ => req,
         };
 
-        let mut res = embodied.send()?;
+        let res = embodied.send()?;
 
         match res.status {
             StatusCode::Ok
