@@ -5,14 +5,14 @@ extern crate hyper;
 use self::hyper::buffer::BufReader;
 use self::hyper::header::ContentType;
 use self::hyper::status::StatusCode;
-use errors::{Result, ErrorKind};
+use errors::{ErrorKind, Result};
 
-use hyper::Client;
-use hyper::client::Body;
 use hyper::client::response::Response;
+use hyper::client::Body;
 use hyper::header;
 use hyper::method::Method;
 use hyper::mime;
+use hyper::Client;
 use hyperlocal::DomainUrl;
 use rustc_serialize::json;
 use std::fmt;
@@ -45,23 +45,31 @@ impl fmt::Debug for Transport {
 }
 
 impl Transport {
-    pub fn request<'a, B>(&'a self, method: Method, endpoint: &str, body: Option<(B, ContentType)>)
-        -> Result<String>
-        where
-            B: Into<Body<'a>>
+    pub fn request<'a, B>(
+        &'a self,
+        method: Method,
+        endpoint: &str,
+        body: Option<(B, ContentType)>,
+    ) -> Result<String>
+    where
+        B: Into<Body<'a>>,
     {
-        let mut res  = self.stream(method, endpoint, body)?;
+        let mut res = self.stream(method, endpoint, body)?;
         let mut body = String::new();
-        let _        = res.read_to_string(&mut body)?;
+        let _ = res.read_to_string(&mut body)?;
 
         debug!("{} raw response: {}", endpoint, body);
         Ok(body)
     }
 
-    pub fn stream<'c, B>(&'c self, method: Method, endpoint: &str, body: Option<(B, ContentType)>)
-        -> Result<Box<Read>>
-        where
-            B: Into<Body<'c>>
+    pub fn stream<'c, B>(
+        &'c self,
+        method: Method,
+        endpoint: &str,
+        body: Option<(B, ContentType)>,
+    ) -> Result<Box<Read>>
+    where
+        B: Into<Body<'c>>,
     {
         let headers = {
             let mut headers = header::Headers::new();
@@ -73,32 +81,38 @@ impl Transport {
         };
 
         let req = match *self {
-            Transport::Tcp { ref client, ref host, } => {
-                client.request(method, &format!("{}{}", host, endpoint)[..])
-            },
-            Transport::Unix { ref client, ref path, } => {
-                client.request(method, DomainUrl::new(&path, endpoint))
-            },
+            Transport::Tcp {
+                ref client,
+                ref host,
+            } => client.request(method, &format!("{}{}", host, endpoint)[..]),
+            Transport::Unix {
+                ref client,
+                ref path,
+            } => client.request(method, DomainUrl::new(&path, endpoint)),
         }.headers(headers);
 
         let embodied = match body {
             Some((b, c)) => req.header(c).body(b),
-            _            => req,
+            _ => req,
         };
 
         let mut res = embodied.send()?;
 
         match res.status {
-            StatusCode::Ok                 |
-            StatusCode::Created            |
-            StatusCode::SwitchingProtocols => Ok(Box::new(res)),
-            StatusCode::NoContent          => Ok(Box::new(BufReader::new("".as_bytes()))),
+            StatusCode::Ok
+            | StatusCode::Created
+            | StatusCode::SwitchingProtocols => Ok(Box::new(res)),
+            StatusCode::NoContent => {
+                Ok(Box::new(BufReader::new("".as_bytes())))
+            }
             // todo: constantize these
-            StatusCode::BadRequest          |
-            StatusCode::NotFound            |
-            StatusCode::NotAcceptable       |
-            StatusCode::Conflict            |
-            StatusCode::InternalServerError => Err(ErrorKind::HyperFault(res.status).into()),
+            StatusCode::BadRequest
+            | StatusCode::NotFound
+            | StatusCode::NotAcceptable
+            | StatusCode::Conflict
+            | StatusCode::InternalServerError => {
+                Err(ErrorKind::HyperFault(res.status).into())
+            }
             _ => unreachable!(),
         }
     }
